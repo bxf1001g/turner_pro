@@ -1,0 +1,44 @@
+# Requirements spec for the pcbflow pipeline.
+# Edit this file and re-run:  python3 -m pcbflow.pipeline designs/lora_relay_controller/requirements.yaml
+
+board:
+  name: lora_relay_controller
+  title: "LoRa 4-Channel Relay Controller with Human Detection"
+  company: ProtoFlow
+  rev: A
+  paper: A2
+
+power:
+  input:
+    type: ac
+    voltage: 220
+    connector: pluggable_terminal_block   # Phoenix MKDS 5.08mm
+    protection: [fuse, mov]               # T2A 250V fuse + S14K275 varistor
+  rails:
+    - name: +12V
+      source: hlk_acdc
+      module: HLK-20M12                   # 220V AC -> 12V DC, 20W
+    - name: +3V3
+      source: lm2596_buck                 # 12V -> 3.3V for MCU / LoRa / sensor
+      from: +12V
+
+mcu:
+  type: esp32_wroom32e                    # industrial-grade, -40..+85C
+  uart_flash_header: true                 # 6-pin header: 3V3 GND EN IO0 TXD RXD
+
+radio:
+  type: ra01sh_sx126x                     # Ai-Thinker RA-01SH (SX1262, 803-930MHz)
+  band: 900MHz
+  antenna: sma
+
+relays:
+  channels: 4
+  driver: uln2003a                        # darlington array w/ built-in flyback diodes
+  relay: srd_12v_form_c                   # SANYOU SRD-12VDC-SL-C, SPDT
+  contact_bus: +12V                       # relay COM contacts bussed to +12V
+  output_connector: screw_terminal        # OUT1..OUT4 + 12V + GND
+
+sensors:
+  - type: hmmd_uart                       # Waveshare HMMD mmWave, 3.3V
+    interface: uart2
+    presence_gpio: true                   # OT2 presence output -> MCU input
